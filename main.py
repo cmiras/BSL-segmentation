@@ -6,7 +6,7 @@ from pathlib import Path
 
 from self_labelling.PL_CP_fusion_methods import get_save_local_fusion, merge_PL_CP, CMPL, extract_CP
 from utils.utils import create_folders
-from model import Trainer
+from model import Trainer, ASFormerTrainer
 from datasets.dataloader import DataLoader
 from batch_gen import BatchGenerator
 
@@ -21,7 +21,8 @@ def main(args, device, model_load_dir, model_save_dir, results_save_dir):
         test_loader = DataLoader(args, args.test_data, 'test')
 
         print(f'Start training.')
-        trainer = Trainer(
+        if args.asformer:
+            trainer = ASFormerTrainer(
                     args.num_stages,
                     args.num_layers,
                     args.num_f_maps,
@@ -31,6 +32,17 @@ def main(args, device, model_load_dir, model_save_dir, results_save_dir):
                     train_loader.weights,
                     model_save_dir
                     )
+        else:
+            trainer = Trainer(
+                        args.num_stages,
+                        args.num_layers,
+                        args.num_f_maps,
+                        args.features_dim,
+                        train_loader.num_classes,
+                        device,
+                        train_loader.weights,
+                        model_save_dir
+                        )
 
         eval_args = [
             args,
@@ -92,16 +104,26 @@ def main(args, device, model_load_dir, model_save_dir, results_save_dir):
         else:
             print(f'Start inference.')
             extract_save_PL = 0
-
-        trainer = Trainer(
-            args.num_stages,
-            args.num_layers,
-            args.num_f_maps,
-            args.features_dim,
-            test_loader.num_classes,
-            device,
-            test_loader.weights,
-            results_save_dir)
+        if args.asformer:
+            trainer = ASFormerTrainer(
+                args.num_stages,
+                args.num_layers,
+                args.num_f_maps,
+                args.features_dim,
+                test_loader.num_classes,
+                device,
+                test_loader.weights,
+                results_save_dir)
+        else:
+            trainer = Trainer(
+                args.num_stages,
+                args.num_layers,
+                args.num_f_maps,
+                args.features_dim,
+                test_loader.num_classes,
+                device,
+                test_loader.weights,
+                results_save_dir)
 
         trainer.predict(
             args,
@@ -207,6 +229,9 @@ if __name__ == "__main__":
     #### Other settings
     parser.add_argument('--feature_normalization', default=0, type=int)
     parser.add_argument('--num_boundary_frames', default=2, type=int)
+    
+    #### Setting : Transformer for action segmentation
+    parser.add_argument('--asformer',default=0, type=int)
 
     args = parser.parse_args()
     # if args.PL_info_savefolder is False:
