@@ -28,13 +28,13 @@ def extract_CP(args, features_dict):
         changepoints = []
 
         # check if CP for this episode with given setting (pen,..) already exists
-        if not os.path.exists(f"data/pseudo_labels/CP/{args.test_data}/{vid.split('.')[0]}/pen_{pen}.pkl"):         
+        if not os.path.exists(f"data/pseudo_labels/CP/{args.folder}/{args.test_data}/{vid.split('.')[0]}/pen_{pen}.pkl"):         
             algo = rpt.Pelt(model=args.merge_model, jump=args.merge_jump).fit(features)
             res = algo.predict(pen=pen)
             CP = [1 if ix in res else 0 for ix in range(len(features))]
-            if not os.path.exists(f"data/pseudo_labels/CP/{args.test_data}/{vid.split('.')[0]}"):
-                os.makedirs(f"data/pseudo_labels/CP/{args.test_data}/{vid.split('.')[0]}")
-            pickle.dump(np.asarray(CP), open(f"data/pseudo_labels/CP/{args.test_data}/{vid.split('.')[0]}/pen_{pen}.pkl", "wb"))
+            if not os.path.exists(f"data/pseudo_labels/CP/{args.folder}/{args.test_data}/{vid.split('.')[0]}"):
+                os.makedirs(f"data/pseudo_labels/CP/{args.folder}/{args.test_data}/{vid.split('.')[0]}")
+            pickle.dump(np.asarray(CP), open(f"data/pseudo_labels/CP/{args.folder}/{args.test_data}/{vid.split('.')[0]}/pen_{pen}.pkl", "wb"))
 
 
 def get_save_local_fusion(args, features_dict, PL_dict):
@@ -66,7 +66,7 @@ def get_save_local_fusion(args, features_dict, PL_dict):
 
                 localfusion_labels[start:end] = res_np
 
-        save_path = f"data/pseudo_labels/local_fusion/{args.test_data}/{args.i3d_training}/local_{args.local_fusion_th_min}_{args.local_fusion_th_max}_{args.local_fusion_pen}/seed_{args.seed}/{vid.split('.')[0]}"
+        save_path = f"data/pseudo_labels/local_fusion/{args.folder}/{args.test_data}/{args.i3d_training}/local_{args.local_fusion_th_min}_{args.local_fusion_th_max}_{args.local_fusion_pen}/seed_{args.seed}/{vid.split('.')[0]}"
          
         if not os.path.exists(f"{save_path}"):
             Path(f"{save_path}").mkdir(parents=True, exist_ok=True)
@@ -91,22 +91,22 @@ def merge_PL_CP(args, features_dict, PL_dict):
         changepoints = []
 
         # check if CP for this episode with given setting (pen,..) already exists
-        if os.path.exists(f"data/pseudo_labels/CP/{args.test_data}/{vid.split('.')[0]}/pen_{args.merge_pen}.pkl"):
-            cp = pickle.load(open(f"data/pseudo_labels/CP/{args.test_data}/{vid.split('.')[0]}/pen_{args.merge_pen}.pkl", "rb"))
+        if os.path.exists(f"data/pseudo_labels/CP/{args.folder}/{args.test_data}/{vid.split('.')[0]}/pen_{args.merge_pen}.pkl"):
+            cp = pickle.load(open(f"data/pseudo_labels/CP/{args.folder}/{args.test_data}/{vid.split('.')[0]}/pen_{args.merge_pen}.pkl", "rb"))
             changepoints.append(cp)
         else:            
             algo = rpt.Pelt(model=args.merge_model, jump=args.merge_jump).fit(features)
             res = algo.predict(pen=args.merge_pen)
             CP = [1 if ix in res else 0 for ix in range(len(features))]
             changepoints.append(np.asarray(CP))
-            if not os.path.exists(f"data/pseudo_labels/CP/{args.test_data}/{vid.split('.')[0]}"):
-                os.makedirs(f"data/pseudo_labels/CP/{args.test_data}/{vid.split('.')[0]}")
-            pickle.dump(np.asarray(CP), open(f"data/pseudo_labels/CP/{args.test_data}/{vid.split('.')[0]}/pen_{args.merge_pen}.pkl", "wb"))
+            if not os.path.exists(f"data/pseudo_labels/CP/{args.folder}/{args.test_data}/{vid.split('.')[0]}"):
+                os.makedirs(f"data/pseudo_labels/CP/{args.folder}/{args.test_data}/{vid.split('.')[0]}")
+            pickle.dump(np.asarray(CP), open(f"data/pseudo_labels/CP/{args.folder}/{args.test_data}/{vid.split('.')[0]}/pen_{args.merge_pen}.pkl", "wb"))
         CP = np.asarray(dilate_boundaries([list(changepoints[0])])[0])
 
         merges = CP|PL
 
-        save_path = f"data/pseudo_labels/PL_CP_merge/{args.test_data}/{args.i3d_training}/merge_{args.merge_pen}/seed_{args.seed}/{vid.split('.')[0]}"
+        save_path = f"data/pseudo_labels/PL_CP_merge/{args.folder}/{args.test_data}/{args.i3d_training}/merge_{args.merge_pen}/seed_{args.seed}/{vid.split('.')[0]}"
         if not os.path.exists(save_path):
             Path(save_path).mkdir(parents=True, exist_ok=True)
         pickle.dump(merges, open(f"{save_path}/preds.pkl", "wb"))
@@ -129,8 +129,8 @@ def CMPL(args, features_dict, PL_dict):
         CP = []
         for pen in args.CMSL_pen:
             # check if CP for this episode with given setting (pen,..) already exists
-            if os.path.exists(f"data/pseudo_labels/CP/{args.test_data}/{vid.split('.')[0]}/pen_{pen}.pkl"):
-                cp_np = pickle.load(open(f"data/pseudo_labels/CP/{args.test_data}/{vid.split('.')[0]}/pen_{pen}.pkl", "rb"))
+            if os.path.exists(f"data/pseudo_labels/CP/{args.folder}/{args.test_data}/{vid.split('.')[0]}/pen_{pen}.pkl"):
+                cp_np = pickle.load(open(f"data/pseudo_labels/CP/{args.folder}/{args.test_data}/{vid.split('.')[0]}/pen_{pen}.pkl", "rb"))
                 CP.append(cp_np)
             else:
                 # TODO: PCA to speed up?
@@ -138,9 +138,9 @@ def CMPL(args, features_dict, PL_dict):
                 res = algo.predict(pen=pen)
                 cp_list = [1 if ix in res else 0 for ix in range(len(features))]
                 CP.append(np.asarray(cp_list))
-                if not os.path.exists(f"data/pseudo_labels/CP/{args.test_data}/{vid.split('.')[0]}"): #HACK
-                    os.makedirs(f"data/pseudo_labels/CP/{args.test_data}/{vid.split('.')[0]}")
-                pickle.dump(np.asarray(cp_list), open(f"data/pseudo_labels/CP/{args.test_data}/{vid.split('.')[0]}/pen_{pen}.pkl", "wb"))
+                if not os.path.exists(f"data/pseudo_labels/CP/{args.folder}/{args.test_data}/{vid.split('.')[0]}"): #HACK
+                    os.makedirs(f"data/pseudo_labels/CP/{args.folder}/{args.test_data}/{vid.split('.')[0]}")
+                pickle.dump(np.asarray(cp_list), open(f"data/pseudo_labels/CP/{args.folder}/{args.test_data}/{vid.split('.')[0]}/pen_{pen}.pkl", "wb"))
 
         # insertion
         SL_insertion = np.asarray(PL.copy())
@@ -186,7 +186,7 @@ def CMPL(args, features_dict, PL_dict):
                     SL_refinement[PL_starts[PL_ix]:PL_ends[PL_ix]] = 0
                     SL_refinement[new_pos-1:new_pos+2] = 1
 
-        save_path = f"data/pseudo_labels/CMPL/{args.test_data}/{args.i3d_training}/CMSL_{'_'.join([str(item) for item in args.CMSL_pen])}_{args.CMSL_jump}_{args.CMSL_th_insert}_{args.CMSL_th_refine}/seed_{args.seed}/{vid.split('.')[0]}"
+        save_path = f"data/pseudo_labels/CMPL/{args.folder}/{args.test_data}/{args.i3d_training}/CMSL_{'_'.join([str(item) for item in args.CMSL_pen])}_{args.CMSL_jump}_{args.CMSL_th_insert}_{args.CMSL_th_refine}/seed_{args.seed}/{vid.split('.')[0]}"
         if not os.path.exists(save_path):
             Path(save_path).mkdir(parents=True, exist_ok=True)
         pickle.dump(SL_refinement, open(f"{save_path}/preds.pkl", "wb"))
