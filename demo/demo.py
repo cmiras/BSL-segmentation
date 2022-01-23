@@ -150,6 +150,33 @@ def load_mstcn_model(
     return model
 
 @beartype
+def load_asformer_model(
+        asformer_checkpoint_path: Path,
+        device,
+        num_blocks: int = 4,
+        num_layers: int = 10,
+        num_f_maps: int = 64,
+        dim: int = 1024,
+        num_classes: int = 2,
+
+) -> torch.nn.Module:
+    """Load pre-trained ASFormer checkpoint, put in eval mode."""
+    model = models.ASFormerMultiStageModel(
+        device,
+        num_blocks, 
+        num_layers, 
+        num_f_maps, 
+        dim, 
+        num_classes,
+    )
+
+    model = model.to(device)
+    checkpoint = torch.load(asformer_checkpoint_path)
+    model.load_state_dict(checkpoint)
+    model.eval()
+    return model
+
+@beartype
 def sliding_windows(
         rgb: torch.Tensor,
         num_in_frames: int,
@@ -192,6 +219,7 @@ def main_i3d(
     starting_point: str,
     i3d_checkpoint_path: Path,
     mstcn_checkpoint_path: Path,
+    asformer_checkpoint_path: Path,
     video_path: Path,
     feature_path: Path,
     save_path: Path,
@@ -205,6 +233,7 @@ def main_i3d(
     save_segments: bool,
     viz: bool,
     generate_vtt: bool,
+    asformer:int,
 ):
     with BlockTimer("Loading I3D model"):
         model = load_i3d_model(
@@ -246,12 +275,13 @@ def main_i3d(
     
     return all_features, all_logits
 
-def main_mstcn(
+def main_model(
     features,
     logits,
     starting_point: str,
     i3d_checkpoint_path: Path,
     mstcn_checkpoint_path: Path,
+    asformer_checkpoint_path: Path,
     video_path: Path,
     feature_path: Path,
     save_path: Path,
@@ -265,14 +295,21 @@ def main_mstcn(
     save_segments: bool,
     viz: bool,
     generate_vtt: bool,
+    asformer:int,
 ):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    with BlockTimer("Loading MS-TCN model"):
-        model = load_mstcn_model(
-            mstcn_checkpoint_path=mstcn_checkpoint_path,
-            device=device
-        )
+    if asformer:
+        with BlockTimer("Loading ASFormer model"):
+            model = load_asformer_model(
+                asformer_checkpoint_path=asformer_checkpoint_path,
+                device=device
+            )
+    else:
+        with BlockTimer("Loading MS-TCN model"):
+            model = load_mstcn_model(
+                mstcn_checkpoint_path=mstcn_checkpoint_path,
+                device=device
+            )
 
     print("Predict segments.")
     sm = nn.Softmax(dim=1)
@@ -343,6 +380,12 @@ if __name__ == "__main__":
         help="Path to MS-TCN checkpoint.",
     )
     p.add_argument(
+        "--asformer_checkpoint_path",
+        type=Path,
+        default="models/asformer/asformer_bslcp_i3d_bslcp.model",
+        help="Path to ASFormer checkpoint.",
+    )
+    p.add_argument(
         "--video_path",
         type=Path,
         default="demo/sample_data/M28c_orgsize.mp4",
@@ -357,7 +400,7 @@ if __name__ == "__main__":
     p.add_argument(
         "--save_path",
         type=Path,
-        default="demo/results",
+        default="demo/results/ms-tcn",
         help="Path to save results.",
     )
     p.add_argument(
@@ -416,6 +459,12 @@ if __name__ == "__main__":
         action='store_true',
         help="Create .vtt file for VIA annotation tool.",
     )
+    p.add_argument(
+        "--asformer",
+        type=int,
+        default=0,
+        help="1 for ASFormer model, 0 for MS-TCN model",
+    )
     args = p.parse_args()
 
     if args.starting_point == "video":
@@ -424,4 +473,4 @@ if __name__ == "__main__":
         features = loadmat(args.feature_path)['preds']
         logits = None
 
-    main_mstcn(features, logits, **vars(p.parse_args()))
+    main_model(features, logits, **vars(p.parse_args()))
