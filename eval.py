@@ -166,7 +166,7 @@ def get_boundary_metric(pred, gt, thresholds, bg_class=[0]):
 
     p_label, p_start, p_end = get_labels_start_end_time(pred, bg_class)
     y_label, y_start, y_end = get_labels_start_end_time(gt, bg_class)
-
+    
     mean_boundary_width_pred = list(pred).count(1) / len(p_label) if len(p_label) else 0
     mean_boundary_width_gt = list(gt).count(1) / len(y_label) if len(y_label) else 0
 
@@ -182,7 +182,8 @@ def get_boundary_metric(pred, gt, thresholds, bg_class=[0]):
         for p in pos_p:
             dist_all.append([abs(y-p) for y in pos_y])
         dist_arr = np.asarray(dist_all)
-
+        
+        
         # calculate mean distance
         mean_dist = [np.mean(np.min(dist_arr, 1))]
 
