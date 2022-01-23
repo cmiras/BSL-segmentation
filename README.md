@@ -1,6 +1,6 @@
 # MVA Project: ASFormer for sign language segmentation
 
-This project is based on the work of Katrin Renz et al. and was done in the context of the Computer Vision and Object Recognitoin course of the Master MVA.
+This project is based on the work of Katrin Renz et al. and was done in the context of the Computer Vision and Object Recognition course of the Master MVA.
 Please visit [this page](https://github.com/RenzKa/sign-segmentation) to access the original work.
 
 # Temporal segmentation of sign language videos
